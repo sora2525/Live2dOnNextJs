@@ -1,0 +1,59 @@
+{
+    "name": "Moo3Musubi Docker",
+    "image": "mcr.microsoft.com/devcontainers/base:debian",
+    "runArgs": ["--name", "live2dOnNextJs"],
+    "features": {
+      "ghcr.io/devcontainers/features/docker-in-docker:2": {
+        "version": "latest",
+        "enableNonRootDocker": "false",
+        "moby": "false"
+      },
+      "ghcr.io/devcontainers/features/github-cli:1": {},
+      "ghcr.io/devcontainers/features/node:1": {}
+    },
+    "customizations": {
+      "vscode": {
+        "extensions": [
+          "bierner.markdown-mermaid",
+          "DavidAnson.vscode-markdownlint",
+          "github.vscode-github-actions",
+          "yzhang.markdown-all-in-one",
+          "esbenp.prettier-vscode",
+          "firsttris.vscode-jest-runner",
+          "dbaeumer.vscode-eslint",
+          "streetsidesoftware.code-spell-checker",
+          "mhutchie.git-graph",
+          "bradlc.vscode-tailwindcss"
+        ],
+        "settings": {
+          "[typescript]": {
+            "editor.defaultFormatter": "esbenp.prettier-vscode",
+            "editor.formatOnSave": true
+          },
+          "[typescriptreact]": {
+            "editor.defaultFormatter": "esbenp.prettier-vscode",
+            "editor.formatOnSave": true
+          },
+          "[javascript]": {
+            "editor.defaultFormatter": "esbenp.prettier-vscode",
+            "editor.formatOnSave": true
+          },
+          "[json]": {
+            "editor.defaultFormatter": "esbenp.prettier-vscode",
+            "editor.formatOnSave": true
+          },
+          "editor.quickSuggestions": {
+            "strings": "on"
+          },
+          "omnisharp.disableMSBuildDiagnosticWarning": false,
+          "omnisharp.enableAsyncCompletion": true,
+          "omnisharp.enableEditorConfigSupport": true,
+          "omnisharp.enableImportCompletion": true,
+          "omnisharp.enableRoslynAnalyzers": true,
+          "omnisharp.organizeImportsOnFormat": true,
+          "omnisharp.useModernNet": true
+        }
+      }
+    }
+  }
+  
