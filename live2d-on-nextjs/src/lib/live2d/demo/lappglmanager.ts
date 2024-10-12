@@ -38,7 +38,21 @@ export class LAppGlManager {
     s_instance = null;
   }
 
+  public static setCanvas(can: HTMLCanvasElement) {
+    // キャンバスの作成
+    canvas = can;
+
+    // glコンテキストを初期化
+    // @ts-ignore
+    gl = canvas.getContext('webgl2');
+
+    if (!gl) {
+      gl = null;
+    }
+  }
+
   constructor() {
+    /*
     // キャンバスの作成
     canvas = document.createElement('canvas');
 
@@ -54,6 +68,7 @@ export class LAppGlManager {
       document.body.innerHTML =
         'This browser does not support the <code>&lt;canvas&gt;</code> element.';
     }
+    */
   }
 
   /**
