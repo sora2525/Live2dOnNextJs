@@ -6,16 +6,19 @@ import { useEffect, useRef } from 'react';
 
 export default function Live2dView() {
   const ref = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    return () => {
+      LAppDelegate.releaseInstance();
+      globalThis.window.removeEventListener('resize', resizeView);
+    };
+  }, []);
+
   useEffect(() => {
     if (ref.current) {
       initialize();
       globalThis.window.addEventListener('resize', resizeView);
     }
-
-    return () => {
-      LAppDelegate.releaseInstance();
-      globalThis.window.removeEventListener('resize', resizeView);
-    };
   }, [ref.current]);
 
   const initialize = async () => {
