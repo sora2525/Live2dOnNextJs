@@ -31,5 +31,11 @@ export default function Live2dView() {
     LAppDelegate.getInstance().onResize();
   };
 
-  return <canvas className="w-screen h-screen" ref={ref} />;
+  return (
+    <>
+      <div id='live2d-container'>
+        <canvas className="w-screen h-screen" ref={ref} />
+      </div>
+    </>
+  )
 }

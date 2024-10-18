@@ -52,7 +52,12 @@ export class LAppDelegate {
    */
   public initialize(): boolean {
     // キャンバスを DOM に追加
-    document.body.appendChild(canvas);
+    const container = document.getElementById('live2d-container');
+    if (container) {
+      container.appendChild(canvas);
+    } else {
+      console.error('Element with id "live2d-container" not found.');
+    }
 
     if (LAppDefine.CanvasSize === 'auto') {
       this._resizeCanvas();
@@ -134,7 +139,7 @@ export class LAppDelegate {
       LAppPal.updateTime();
 
       // 画面の初期化
-      gl.clearColor(0.0, 0.0, 0.0, 1.0);
+      gl.clearColor(0.0, 0.0, 0.0, 0.0);
 
       // 深度テストを有効化
       gl.enable(gl.DEPTH_TEST);
