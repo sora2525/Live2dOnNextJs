@@ -51,6 +51,7 @@ export function useLipSyncHandler() {
 
         if (wavFileHandlerRef.current && model && model.getModel()) {
             const cubismModel = model.getModel();
+            
             const updated = wavFileHandlerRef.current.update(updateInterval / 1000);
 
             if (!updated) {
