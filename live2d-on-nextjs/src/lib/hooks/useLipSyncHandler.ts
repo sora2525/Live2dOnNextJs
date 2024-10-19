@@ -31,7 +31,6 @@ export function useLipSyncHandler() {
     if (success) {
       console.log("WAV file loaded successfully");
   
-      // 音声を再生するためのAudioオブジェクトを作成
       const audio = new Audio(wavFilePath);
       audio.play(); // 音声を再生
   
@@ -46,29 +45,29 @@ export function useLipSyncHandler() {
     const updateInterval = 16; // 60FPSでリップシンクを更新
 
     const update = () => {
-        const live2DManager = LAppLive2DManager.getInstance();
-        const model = live2DManager.getModel(0); // 1番目のモデルを取得
+      const live2DManager = LAppLive2DManager.getInstance();
+      const model = live2DManager.getModel(0); // 1番目のモデルを取得
 
-        if (wavFileHandlerRef.current && model && model.getModel()) {
-            const cubismModel = model.getModel();
-            
-            const updated = wavFileHandlerRef.current.update(updateInterval / 1000);
+      if (wavFileHandlerRef.current && model) {
+        const updated = wavFileHandlerRef.current.update(updateInterval / 1000);
 
-            if (!updated) {
-                console.log("WAV file playback finished");
-                clearInterval(intervalId); // WAVファイルが終了した場合、リップシンクを停止
-                return;
-            }
-
-            const rms = wavFileHandlerRef.current.getRms();
-            const scaledRms = Math.min(rms * 3, 1); // RMS値を調整
-            cubismModel.addParameterValueById("ParamMouthOpenY", scaledRms);
-            console.log("Applying scaled RMS to ParamMouthOpenY:", scaledRms);
+        if (!updated) {
+          console.log("WAV file playback finished");
+          clearInterval(intervalId); // WAVファイルが終了した場合、リップシンクを停止
+          return;
         }
+
+        const rms = wavFileHandlerRef.current.getRms();
+        const scaledRms = Math.min(rms * 3, 1); // RMS値を調整
+
+        // ここで LAppModel のリップシンク用変数を更新
+        model.setLipSyncValue(scaledRms);
+        console.log("Setting LipSync value:", scaledRms);
+      }
     };
 
     const intervalId = setInterval(update, updateInterval);
-};
+  };
 
   return {
     startLipSync,
