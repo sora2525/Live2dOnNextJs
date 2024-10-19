@@ -496,72 +496,83 @@ export class LAppModel extends CubismUserModel {
    * 更新
    */
 
-   private _lipSyncValue: number = 0.0;
+  private _lipSyncValue: number = 0.0;  // リップシンク値
 
-  // リップシンク値を設定するメソッド
-  public setLipSyncValue(value: number): void {
-    this._lipSyncValue = value;
+// リップシンク値を設定するメソッド
+public setLipSyncValue(value: number): void {
+  this._lipSyncValue = value;
+}
+
+public update(): void {
+  if (this._state != LoadStep.CompleteSetup) return;
+
+  const deltaTimeSeconds: number = LAppPal.getDeltaTime();
+  this._userTimeSeconds += deltaTimeSeconds;
+
+  this._dragManager.update(deltaTimeSeconds);
+  this._dragX = this._dragManager.getX();
+  this._dragY = this._dragManager.getY();
+
+  // モーションによるパラメータ更新の有無
+  let motionUpdated = false;
+
+  this._model.loadParameters(); // 前回セーブされた状態をロード
+  if (this._motionManager.isFinished()) {
+    this.startRandomMotion(LAppDefine.MotionGroupIdle, LAppDefine.PriorityIdle);
+  } else {
+    motionUpdated = this._motionManager.updateMotion(this._model, deltaTimeSeconds);
   }
-  
-  public update(): void {
-    if (this._state != LoadStep.CompleteSetup) return;
+  this._model.saveParameters(); // 状態を保存
 
-    const deltaTimeSeconds: number = LAppPal.getDeltaTime();
-    this._userTimeSeconds += deltaTimeSeconds;
-
-    this._dragManager.update(deltaTimeSeconds);
-    this._dragX = this._dragManager.getX();
-    this._dragY = this._dragManager.getY();
-
-    // モーションによるパラメータ更新の有無
-    let motionUpdated = false;
-
-    this._model.loadParameters(); // 前回セーブされた状態をロード
-    if (this._motionManager.isFinished()) {
-      this.startRandomMotion(LAppDefine.MotionGroupIdle, LAppDefine.PriorityIdle);
-    } else {
-      motionUpdated = this._motionManager.updateMotion(this._model, deltaTimeSeconds);
+  // まばたき
+  if (!motionUpdated) {
+    if (this._eyeBlink != null) {
+      this._eyeBlink.updateParameters(this._model, deltaTimeSeconds);
     }
-    this._model.saveParameters(); // 状態を保存
+  }
 
-    // まばたき
-    if (!motionUpdated) {
-      if (this._eyeBlink != null) {
-        this._eyeBlink.updateParameters(this._model, deltaTimeSeconds);
-      }
-    }
+  if (this._expressionManager != null) {
+    this._expressionManager.updateMotion(this._model, deltaTimeSeconds);
+  }
 
-    if (this._expressionManager != null) {
-      this._expressionManager.updateMotion(this._model, deltaTimeSeconds);
-    }
+  // ドラッグによる顔の向きの調整
+  this._model.addParameterValueById(this._idParamAngleX, this._dragX * 30);
+  this._model.addParameterValueById(this._idParamAngleY, this._dragY * 30);
+  this._model.addParameterValueById(this._idParamAngleZ, this._dragX * this._dragY * -30);
 
-    // ドラッグによる顔の向きの調整
-    this._model.addParameterValueById(this._idParamAngleX, this._dragX * 30);
-    this._model.addParameterValueById(this._idParamAngleY, this._dragY * 30);
-    this._model.addParameterValueById(this._idParamAngleZ, this._dragX * this._dragY * -30);
-
-    // リップシンクの設定を update 内で反映
+  // リップシンク値をモーションの口の動きに加算して上書き
+  if (this._lipSyncValue > 0) {
     for (let i = 0; i < this._lipSyncIds.getSize(); ++i) {
-      this._model.addParameterValueById(this._lipSyncIds.at(i), this._lipSyncValue, 0.8);
-    }
+      const lipSyncParamId = this._lipSyncIds.at(i);
 
-    // 呼吸
-    if (this._breath != null) {
-      this._breath.updateParameters(this._model, deltaTimeSeconds);
-    }
+      // モーションで設定された現在の口の値を取得
+      const currentMouthValue = this._model.getParameterValueById(lipSyncParamId);
 
-    // 物理演算
-    if (this._physics != null) {
-      this._physics.evaluate(this._model, deltaTimeSeconds);
-    }
+      // リップシンクの値をモーションの口パラメーターに加算して適用
+      const finalMouthValue = currentMouthValue + this._lipSyncValue;
 
-    // ポーズ
-    if (this._pose != null) {
-      this._pose.updateParameters(this._model, deltaTimeSeconds);
+      // 新しいパラメーター値を設定
+      this._model.addParameterValueById(lipSyncParamId, finalMouthValue - currentMouthValue, 1.0);
     }
-
-    this._model.update();
   }
+
+  // 呼吸
+  if (this._breath != null) {
+    this._breath.updateParameters(this._model, deltaTimeSeconds);
+  }
+
+  // 物理演算
+  if (this._physics != null) {
+    this._physics.evaluate(this._model, deltaTimeSeconds);
+  }
+
+  // ポーズ
+  if (this._pose != null) {
+    this._pose.updateParameters(this._model, deltaTimeSeconds);
+  }
+
+  this._model.update();
+}
 
   /**
    * 引数で指定したモーションの再生を開始する

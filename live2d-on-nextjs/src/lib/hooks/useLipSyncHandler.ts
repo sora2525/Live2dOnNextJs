@@ -3,6 +3,8 @@ import { LAppDelegate } from '@/lib/live2d/demo/lappdelegate';
 import { LAppWavFileHandler } from '@/lib/live2d/demo/lappwavfilehandler';
 import { LAppLive2DManager } from '@/lib/live2d/demo/lapplive2dmanager';
 import { CubismDefaultParameterId } from '../live2d/framework/cubismdefaultparameterid';
+import * as LAppDefine from '@/lib/live2d/demo/lappdefine';
+
 
 export function useLipSyncHandler() {
   const wavFileHandlerRef = useRef<LAppWavFileHandler | null>(null);
@@ -35,11 +37,25 @@ export function useLipSyncHandler() {
       audio.play(); // 音声を再生
   
       wavFileHandlerRef.current.start(wavFilePath); // リップシンク用のWAVファイル処理を開始
+
+      // ここで強制的に指定したモーションに変更
+      forcePlayMotion();
+
       updateLipSync(); // リップシンク開始
     } else {
       console.error("Failed to load WAV file for lip-syncing.");
     }
   };
+
+  const forcePlayMotion = () => {
+    const live2DManager = LAppLive2DManager.getInstance();
+    const model = live2DManager.getModel(0); // 1番目のモデルを取得
+
+    if (model) {
+      // 強制的に `Hiyori_m01.motion3.json` を再生
+      model.startMotion("Idle", 0, LAppDefine.PriorityForce);
+    }
+  }
 
   const updateLipSync = () => {
     const updateInterval = 16; // 60FPSでリップシンクを更新
@@ -58,7 +74,7 @@ export function useLipSyncHandler() {
         }
 
         const rms = wavFileHandlerRef.current.getRms();
-        const scaledRms = Math.min(rms * 3, 1); // RMS値を調整
+        const scaledRms = Math.min(rms * 10, 1); // RMS値を調整
 
         // ここで LAppModel のリップシンク用変数を更新
         model.setLipSyncValue(scaledRms);
