@@ -1,3 +1,4 @@
+//live2d-on-nextjs/src/lib/live2d/demo/lappmodel.ts
 /**
  * Copyright(c) Live2D Inc. All rights reserved.
  *
@@ -494,96 +495,84 @@ export class LAppModel extends CubismUserModel {
   /**
    * 更新
    */
-  public update(): void {
-    if (this._state != LoadStep.CompleteSetup) return;
 
-    const deltaTimeSeconds: number = LAppPal.getDeltaTime();
-    this._userTimeSeconds += deltaTimeSeconds;
+  private _lipSyncValue: number = 0.0;  // リップシンク値
 
-    this._dragManager.update(deltaTimeSeconds);
-    this._dragX = this._dragManager.getX();
-    this._dragY = this._dragManager.getY();
+// リップシンク値を設定するメソッド
+public setLipSyncValue(value: number): void {
+  this._lipSyncValue = value;
+}
 
-    // モーションによるパラメータ更新の有無
-    let motionUpdated = false;
+public update(): void {
+  if (this._state != LoadStep.CompleteSetup) return;
 
-    //--------------------------------------------------------------------------
-    this._model.loadParameters(); // 前回セーブされた状態をロード
-    if (this._motionManager.isFinished()) {
-      // モーションの再生がない場合、待機モーションの中からランダムで再生する
-      this.startRandomMotion(
-        LAppDefine.MotionGroupIdle,
-        LAppDefine.PriorityIdle
-      );
-    } else {
-      motionUpdated = this._motionManager.updateMotion(
-        this._model,
-        deltaTimeSeconds
-      ); // モーションを更新
-    }
-    this._model.saveParameters(); // 状態を保存
-    //--------------------------------------------------------------------------
+  const deltaTimeSeconds: number = LAppPal.getDeltaTime();
+  this._userTimeSeconds += deltaTimeSeconds;
 
-    // まばたき
-    if (!motionUpdated) {
-      if (this._eyeBlink != null) {
-        // メインモーションの更新がないとき
-        this._eyeBlink.updateParameters(this._model, deltaTimeSeconds); // 目パチ
-      }
-    }
+  this._dragManager.update(deltaTimeSeconds);
+  this._dragX = this._dragManager.getX();
+  this._dragY = this._dragManager.getY();
 
-    if (this._expressionManager != null) {
-      this._expressionManager.updateMotion(this._model, deltaTimeSeconds); // 表情でパラメータ更新（相対変化）
-    }
+  // モーションによるパラメータ更新の有無
+  let motionUpdated = false;
 
-    // ドラッグによる変化
-    // ドラッグによる顔の向きの調整
-    this._model.addParameterValueById(this._idParamAngleX, this._dragX * 30); // -30から30の値を加える
-    this._model.addParameterValueById(this._idParamAngleY, this._dragY * 30);
-    this._model.addParameterValueById(
-      this._idParamAngleZ,
-      this._dragX * this._dragY * -30
-    );
-
-    // ドラッグによる体の向きの調整
-    this._model.addParameterValueById(
-      this._idParamBodyAngleX,
-      this._dragX * 10
-    ); // -10から10の値を加える
-
-    // ドラッグによる目の向きの調整
-    this._model.addParameterValueById(this._idParamEyeBallX, this._dragX); // -1から1の値を加える
-    this._model.addParameterValueById(this._idParamEyeBallY, this._dragY);
-
-    // 呼吸など
-    if (this._breath != null) {
-      this._breath.updateParameters(this._model, deltaTimeSeconds);
-    }
-
-    // 物理演算の設定
-    if (this._physics != null) {
-      this._physics.evaluate(this._model, deltaTimeSeconds);
-    }
-
-    // リップシンクの設定
-    if (this._lipsync) {
-      let value = 0.0; // リアルタイムでリップシンクを行う場合、システムから音量を取得して、0~1の範囲で値を入力します。
-
-      this._wavFileHandler.update(deltaTimeSeconds);
-      value = this._wavFileHandler.getRms();
-
-      for (let i = 0; i < this._lipSyncIds.getSize(); ++i) {
-        this._model.addParameterValueById(this._lipSyncIds.at(i), value, 0.8);
-      }
-    }
-
-    // ポーズの設定
-    if (this._pose != null) {
-      this._pose.updateParameters(this._model, deltaTimeSeconds);
-    }
-
-    this._model.update();
+  this._model.loadParameters(); // 前回セーブされた状態をロード
+  if (this._motionManager.isFinished()) {
+    this.startRandomMotion(LAppDefine.MotionGroupIdle, LAppDefine.PriorityIdle);
+  } else {
+    motionUpdated = this._motionManager.updateMotion(this._model, deltaTimeSeconds);
   }
+  this._model.saveParameters(); // 状態を保存
+
+  // まばたき
+  if (!motionUpdated) {
+    if (this._eyeBlink != null) {
+      this._eyeBlink.updateParameters(this._model, deltaTimeSeconds);
+    }
+  }
+
+  if (this._expressionManager != null) {
+    this._expressionManager.updateMotion(this._model, deltaTimeSeconds);
+  }
+
+  // ドラッグによる顔の向きの調整
+  this._model.addParameterValueById(this._idParamAngleX, this._dragX * 30);
+  this._model.addParameterValueById(this._idParamAngleY, this._dragY * 30);
+  this._model.addParameterValueById(this._idParamAngleZ, this._dragX * this._dragY * -30);
+
+  // リップシンク値をモーションの口の動きに加算して上書き
+  if (this._lipSyncValue > 0) {
+    for (let i = 0; i < this._lipSyncIds.getSize(); ++i) {
+      const lipSyncParamId = this._lipSyncIds.at(i);
+
+      // モーションで設定された現在の口の値を取得
+      const currentMouthValue = this._model.getParameterValueById(lipSyncParamId);
+
+      // リップシンクの値をモーションの口パラメーターに加算して適用
+      const finalMouthValue = currentMouthValue + this._lipSyncValue;
+
+      // 新しいパラメーター値を設定
+      this._model.addParameterValueById(lipSyncParamId, finalMouthValue - currentMouthValue, 1.0);
+    }
+  }
+
+  // 呼吸
+  if (this._breath != null) {
+    this._breath.updateParameters(this._model, deltaTimeSeconds);
+  }
+
+  // 物理演算
+  if (this._physics != null) {
+    this._physics.evaluate(this._model, deltaTimeSeconds);
+  }
+
+  // ポーズ
+  if (this._pose != null) {
+    this._pose.updateParameters(this._model, deltaTimeSeconds);
+  }
+
+  this._model.update();
+}
 
   /**
    * 引数で指定したモーションの再生を開始する

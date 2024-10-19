@@ -1,3 +1,4 @@
+// live2d-on-nextjs/src/lib/live2d/framework/physics/cubismphysicsjson.ts
 /**
  * Copyright(c) Live2D Inc. All rights reserved.
  *

@@ -1,3 +1,4 @@
+//live2d-on-nextjs/src/lib/live2d/demo/lappdefine.ts
 /**
  * Copyright(c) Live2D Inc. All rights reserved.
  *
@@ -46,12 +47,7 @@ export const PowerImageName = '';
 // ディレクトリ名とmodel3.jsonの名前を一致させておくこと
 export const ModelDir: string[] = [
   'Hiyori',
-  'Haru',
-  'Mark',
-  'Natori',
-  'Rice',
   'Mao',
-  'Wanko'
 ];
 export const ModelDirSize: number = ModelDir.length;
 
