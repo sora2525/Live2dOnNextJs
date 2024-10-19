@@ -1,4 +1,3 @@
-'use client'
 import Live2dView from '@/components/live2d/live2dView';
 import { useLipSyncHandler } from '@/lib/hooks/useLipSyncHandler';
 import Main from '@/components/voicevox/main';
@@ -6,7 +5,7 @@ import Main from '@/components/voicevox/main';
 export default function Live2D() {
   return (
     <>
-      <div className="relative bg-[url('/images/school03.png')] bg-cover bg-center h-[100vh] w-full">
+      {/* <div className="relative bg-[url('/images/school03.png')] bg-cover bg-center h-[100vh] w-full">
         <div className="absolute top-0 left-0 w-full h-full">
           <Live2dView />
         </div>
@@ -15,7 +14,7 @@ export default function Live2D() {
           <Main />
         </div>
 
-      </div>
+      </div> */}
     </>
   );
 }
