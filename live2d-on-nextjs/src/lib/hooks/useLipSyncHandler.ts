@@ -2,12 +2,11 @@ import { useEffect, useRef } from 'react';
 import { LAppDelegate } from '@/lib/live2d/demo/lappdelegate';
 import { LAppWavFileHandler } from '@/lib/live2d/demo/lappwavfilehandler';
 import { LAppLive2DManager } from '@/lib/live2d/demo/lapplive2dmanager';
-import { CubismDefaultParameterId } from '../live2d/framework/cubismdefaultparameterid';
 import * as LAppDefine from '@/lib/live2d/demo/lappdefine';
-
 
 export function useLipSyncHandler() {
   const wavFileHandlerRef = useRef<LAppWavFileHandler | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     wavFileHandlerRef.current = new LAppWavFileHandler();
@@ -23,25 +22,25 @@ export function useLipSyncHandler() {
 
   const startLipSync = async (wavFilePath: string) => {
     console.log("startLipSync called");
-  
+
     if (!wavFileHandlerRef.current) {
       console.error("wavFileHandlerRef is not initialized.");
       return;
     }
-  
+
     const success = await wavFileHandlerRef.current.loadWavFile(wavFilePath);
     if (success) {
       console.log("WAV file loaded successfully");
-  
+
       const audio = new Audio(wavFilePath);
+      audioRef.current = audio;
       audio.play(); // 音声を再生
-  
+
       wavFileHandlerRef.current.start(wavFilePath); // リップシンク用のWAVファイル処理を開始
 
-      // ここで強制的に指定したモーションに変更
+      // モーションの再生とリップシンクの更新を開始
       forcePlayMotion();
-
-      updateLipSync(); // リップシンク開始
+      updateLipSync();
     } else {
       console.error("Failed to load WAV file for lip-syncing.");
     }
@@ -52,10 +51,18 @@ export function useLipSyncHandler() {
     const model = live2DManager.getModel(0); // 1番目のモデルを取得
 
     if (model) {
-      // 強制的に `Hiyori_m01.motion3.json` を再生
-      model.startMotion("Idle", 0, LAppDefine.PriorityForce);
+      // モーションが終了したときにコールバックを設定
+      const onMotionFinished = () => {
+        if (audioRef.current && !audioRef.current.paused) {
+          // まだ音声が再生中であればもう一度モーション1を再生
+          model.startMotion("Idle", 0, LAppDefine.PriorityForce);
+        }
+      };
+
+      // 強制的に `Hiyori_m01.motion3.json` を再生し、終了時にコールバックを呼び出す
+      model.startMotion("Idle", 0, LAppDefine.PriorityForce, onMotionFinished);
     }
-  }
+  };
 
   const updateLipSync = () => {
     const updateInterval = 16; // 60FPSでリップシンクを更新
